@@ -75,7 +75,14 @@ def make_regression_features(values: dict, bundle: dict) -> pd.DataFrame:
     )
     features = pd.concat([numeric, encoded], axis=1)
     continuous = bundle["continuous_columns"]
-    features.loc[:, continuous] = bundle["scaler"].transform(features[continuous])
+    scaled = pd.DataFrame(
+        bundle["scaler"].transform(features[continuous]),
+        columns=continuous,
+        index=features.index,
+    )
+    # Replace the columns so pandas can store scaled floats even when their
+    # original values (for example, purchase_dow) were integer typed.
+    features = features.drop(columns=continuous).join(scaled)
     return features.reindex(columns=bundle["feature_columns"], fill_value=0)
 
 
